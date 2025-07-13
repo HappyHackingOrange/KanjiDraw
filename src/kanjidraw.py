@@ -34,13 +34,7 @@ class KanjiDrawApp:
         self.button_frame.pack(side=tk.TOP, pady=(0, 5))
         
         # Create canvas with black background
-        self.base_resolution = 400  # Base resolution
-        if self.debug_mode:
-            self.resolution_scale = 16  # Default scale (6400 = 400 * 16)
-            self.canvas_size = self.base_resolution * self.resolution_scale
-        else:
-            self.resolution_scale = 2  # Fixed scale for non-debug mode
-            self.canvas_size = 800  # Fixed high resolution when not debugging
+        self.canvas_size = 800  # Fixed size for good balance
         self.canvas = tk.Canvas(
             self.drawing_container,
             bg='black',
@@ -60,6 +54,10 @@ class KanjiDrawApp:
         self.canvas.bind("<Button-1>", self.start_drawing)
         self.canvas.bind("<B1-Motion>", self.draw)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
+        
+        # Enable antialiasing by adding multiple stroke layers
+        self.enable_antialiasing = True
+        self.drawing_performance_mode = True  # Use simpler rendering while drawing
         
         
         # Style for buttons
@@ -128,25 +126,45 @@ class KanjiDrawApp:
         """Continue drawing the current stroke"""
         if self.is_drawing and self.current_stroke:
             x, y = event.x, event.y
+            
+            # Only add point if it moved enough to reduce lag
+            if self.current_stroke:
+                last_x, last_y = self.current_stroke[-1]
+                distance = ((x - last_x) ** 2 + (y - last_y) ** 2) ** 0.5
+                if distance < 3:  # Skip if moved less than 3 pixels
+                    return
+            
             self.current_stroke.append((x, y))
             
-            # Draw line segment
-            if len(self.current_stroke) > 1:
+            # Use simple line drawing while drawing for better performance
+            if len(self.current_stroke) >= 2:
                 prev_x, prev_y = self.current_stroke[-2]
-                self.canvas.create_line(
-                    prev_x, prev_y, x, y,
-                    fill='white',
-                    width=self.stroke_thickness,
-                    capstyle=tk.ROUND,
-                    joinstyle=tk.ROUND,
-                    smooth=tk.TRUE,
-                    tags='stroke'
-                )
+                if self.drawing_performance_mode:
+                    # Simple single-line drawing while moving mouse
+                    self.canvas.create_line(
+                        prev_x, prev_y, x, y,
+                        fill='white',
+                        width=self.stroke_thickness,
+                        capstyle=tk.ROUND,
+                        joinstyle=tk.ROUND,
+                        smooth=tk.TRUE,
+                        tags='temp_stroke'
+                    )
+                else:
+                    # Full antialiased rendering
+                    self.canvas.delete('temp_stroke')
+                    self.draw_stroke_path(self.current_stroke, 'temp_stroke')
     
     def stop_drawing(self, event):
         """Finish the current stroke"""
         if self.is_drawing and self.current_stroke:
+            # Convert temporary stroke to permanent stroke
+            self.canvas.delete('temp_stroke')
             self.strokes.append(self.current_stroke)
+            
+            # Draw the final stroke as permanent (no need to redraw everything)
+            self.draw_stroke_path(self.current_stroke, 'stroke')
+            
             self.current_stroke = []
         self.is_drawing = False
     
@@ -167,47 +185,123 @@ class KanjiDrawApp:
         # Clear all strokes but keep guide lines
         self.canvas.delete('stroke')
         
-        # Redraw all strokes
+        # Redraw all strokes as complete paths
         for stroke in self.strokes:
-            for i in range(1, len(stroke)):
-                x1, y1 = stroke[i-1]
-                x2, y2 = stroke[i]
-                self.canvas.create_line(
-                    x1, y1, x2, y2,
-                    fill='white',
-                    width=self.stroke_thickness,
-                    capstyle=tk.ROUND,
-                    joinstyle=tk.ROUND,
-                    smooth=tk.TRUE,
-                    tags='stroke'
-                )
+            if len(stroke) >= 2:
+                self.draw_stroke_path(stroke, 'stroke')
     
-    def update_resolution(self, value):
-        """Update canvas resolution while maintaining visual appearance"""
-        if not self.debug_mode:
+    def draw_stroke_path(self, stroke_points, tag):
+        """Draw an entire stroke as a smooth path with antialiasing"""
+        if len(stroke_points) < 2:
             return
             
-        old_canvas_size = self.canvas_size
-        self.resolution_scale = int(value)
-        new_canvas_size = self.base_resolution * self.resolution_scale
+        # Convert points to flat list for tkinter
+        points = []
+        for x, y in stroke_points:
+            points.extend([x, y])
         
-        # Scale existing strokes to maintain their visual position
-        if old_canvas_size != new_canvas_size and old_canvas_size > 0:
-            scale_factor = new_canvas_size / old_canvas_size
-            scaled_strokes = []
-            for stroke in self.strokes:
-                scaled_stroke = [(x * scale_factor, y * scale_factor) for x, y in stroke]
-                scaled_strokes.append(scaled_stroke)
-            self.strokes = scaled_strokes
+        # Use fewer spline steps for temp strokes to improve performance
+        steps = 12 if tag == 'temp_stroke' else 24
         
-        # Update canvas size
-        self.canvas_size = new_canvas_size
-        self.canvas.config(width=self.canvas_size, height=self.canvas_size)
-        
-        # Redraw everything
-        self.canvas.delete('all')
-        self.draw_guide_lines()
-        self.redraw_canvas()
+        if self.enable_antialiasing:
+            # Draw layers from largest to smallest for proper antialiasing
+            # Outer edge (light gray)
+            self.canvas.create_line(
+                *points,
+                fill='#888888',
+                width=self.stroke_thickness + 2,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                splinesteps=steps,
+                tags=tag
+            )
+            
+            # Inner edge (very light gray)
+            self.canvas.create_line(
+                *points,
+                fill='#CCCCCC',
+                width=self.stroke_thickness + 1,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                splinesteps=steps,
+                tags=tag
+            )
+            
+            # Core layer (white)
+            self.canvas.create_line(
+                *points,
+                fill='white',
+                width=self.stroke_thickness,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                splinesteps=steps,
+                tags=tag
+            )
+        else:
+            # Standard drawing without antialiasing
+            self.canvas.create_line(
+                *points,
+                fill='white',
+                width=self.stroke_thickness,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                splinesteps=steps,
+                tags=tag
+            )
+    
+    def draw_antialiased_line(self, x1, y1, x2, y2):
+        """Draw a line with simulated antialiasing using multiple layers"""
+        if self.enable_antialiasing:
+            # Draw layers from largest to smallest (background to foreground)
+            # This ensures the white core is on top
+            
+            # Outer edge (light gray) - drawn first (background)
+            self.canvas.create_line(
+                x1, y1, x2, y2,
+                fill='#888888',
+                width=self.stroke_thickness + 2,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                tags='stroke'
+            )
+            
+            # Inner edge (very light gray) - drawn second
+            self.canvas.create_line(
+                x1, y1, x2, y2,
+                fill='#CCCCCC',
+                width=self.stroke_thickness + 1,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                tags='stroke'
+            )
+            
+            # Core layer (white) - drawn last (foreground)
+            self.canvas.create_line(
+                x1, y1, x2, y2,
+                fill='white',
+                width=self.stroke_thickness,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                tags='stroke'
+            )
+        else:
+            # Standard drawing without antialiasing
+            self.canvas.create_line(
+                x1, y1, x2, y2,
+                fill='white',
+                width=self.stroke_thickness,
+                capstyle=tk.ROUND,
+                joinstyle=tk.ROUND,
+                smooth=tk.TRUE,
+                tags='stroke'
+            )
     
     def update_thickness(self, value):
         """Update stroke thickness"""
@@ -236,31 +330,13 @@ class KanjiDrawApp:
         )
         debug_label.pack(side=tk.TOP, pady=2)
         
-        # Create a sub-frame for sliders
-        slider_frame = tk.Frame(self.control_frame, bg='#333333')
-        slider_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
-        
-        # Resolution slider
-        self.res_scale = tk.Scale(
-            slider_frame,
-            from_=1,
-            to=32,
-            orient=tk.HORIZONTAL,
-            command=self.update_resolution,
-            bg='#555555',
-            fg='white',
-            troughcolor='#777777',
-            highlightbackground='#333333',
-            length=200,
-            label="Resolution",
-            font=('Arial', 8)
-        )
-        self.res_scale.set(self.resolution_scale)
-        self.res_scale.pack(side=tk.LEFT, padx=20, pady=5)
+        # Create a sub-frame for controls
+        control_frame = tk.Frame(self.control_frame, bg='#333333')
+        control_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
         
         # Thickness slider
         self.thick_scale = tk.Scale(
-            slider_frame,
+            control_frame,
             from_=1,
             to=20,
             orient=tk.HORIZONTAL,
@@ -276,9 +352,50 @@ class KanjiDrawApp:
         self.thick_scale.set(self.stroke_thickness)
         self.thick_scale.pack(side=tk.LEFT, padx=20, pady=5)
         
+        # Antialiasing toggle
+        self.aa_var = tk.BooleanVar(value=self.enable_antialiasing)
+        self.aa_checkbox = tk.Checkbutton(
+            control_frame,
+            text="Antialiasing",
+            variable=self.aa_var,
+            command=self.toggle_antialiasing,
+            fg='white',
+            bg='#333333',
+            selectcolor='#555555',
+            activebackground='#444444',
+            activeforeground='white',
+            font=('Arial', 8)
+        )
+        self.aa_checkbox.pack(side=tk.LEFT, padx=10, pady=5)
+        
+        # Performance mode toggle
+        self.perf_var = tk.BooleanVar(value=self.drawing_performance_mode)
+        self.perf_checkbox = tk.Checkbutton(
+            control_frame,
+            text="Fast Drawing",
+            variable=self.perf_var,
+            command=self.toggle_performance_mode,
+            fg='white',
+            bg='#333333',
+            selectcolor='#555555',
+            activebackground='#444444',
+            activeforeground='white',
+            font=('Arial', 8)
+        )
+        self.perf_checkbox.pack(side=tk.LEFT, padx=10, pady=5)
+        
         # Force immediate visibility
         self.control_frame.update_idletasks()
         self.root.update_idletasks()
+    
+    def toggle_antialiasing(self):
+        """Toggle antialiasing on/off"""
+        self.enable_antialiasing = self.aa_var.get()
+        self.redraw_canvas()
+    
+    def toggle_performance_mode(self):
+        """Toggle performance mode for drawing"""
+        self.drawing_performance_mode = self.perf_var.get()
     
     def on_resize(self, event):
         """Handle window resize to maintain square canvas"""
