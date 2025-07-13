@@ -96,21 +96,35 @@ class KanjiDrawApp:
         self.canvas_frame.bind("<Configure>", self.on_resize)
         
     def draw_guide_lines(self):
-        """Draw horizontal and vertical dashed lines across the center"""
+        """Draw horizontal and vertical dashed lines that cross at center"""
         center = self.canvas_size / 2
         
-        # Horizontal line
+        # Draw horizontal line in two segments from center outward
         self.canvas.create_line(
-            0, center, self.canvas_size, center,
+            center, center, self.canvas_size, center,
+            fill='#666666',
+            width=1,
+            dash=(10, 10),
+            tags='guide'
+        )
+        self.canvas.create_line(
+            center, center, 0, center,
             fill='#666666',
             width=1,
             dash=(10, 10),
             tags='guide'
         )
         
-        # Vertical line
+        # Draw vertical line in two segments from center outward
         self.canvas.create_line(
-            center, 0, center, self.canvas_size,
+            center, center, center, self.canvas_size,
+            fill='#666666',
+            width=1,
+            dash=(10, 10),
+            tags='guide'
+        )
+        self.canvas.create_line(
+            center, center, center, 0,
             fill='#666666',
             width=1,
             dash=(10, 10),
@@ -188,6 +202,10 @@ class KanjiDrawApp:
         """Redraw the entire canvas"""
         # Clear all strokes but keep guide lines
         self.canvas.delete('stroke')
+        
+        # Redraw guide lines to ensure they're always centered
+        self.canvas.delete('guide')
+        self.draw_guide_lines()
         
         if self.enable_antialiasing:
             # Draw all strokes in layers to avoid borders between strokes
