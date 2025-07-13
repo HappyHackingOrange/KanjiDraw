@@ -89,8 +89,8 @@ class KanjiDrawApp:
         # Horizontal line
         self.canvas.create_line(
             0, center, self.canvas_size, center,
-            fill='white',
-            width=2,
+            fill='#666666',
+            width=1,
             dash=(10, 10),
             tags='guide'
         )
@@ -98,8 +98,8 @@ class KanjiDrawApp:
         # Vertical line
         self.canvas.create_line(
             center, 0, center, self.canvas_size,
-            fill='white',
-            width=2,
+            fill='#666666',
+            width=1,
             dash=(10, 10),
             tags='guide'
         )
@@ -121,9 +121,10 @@ class KanjiDrawApp:
                 self.canvas.create_line(
                     prev_x, prev_y, x, y,
                     fill='white',
-                    width=3,
+                    width=6,
                     capstyle=tk.ROUND,
                     joinstyle=tk.ROUND,
+                    smooth=tk.TRUE,
                     tags='stroke'
                 )
     
@@ -153,15 +154,20 @@ class KanjiDrawApp:
         
         # Redraw all strokes
         for stroke in self.strokes:
-            for i in range(1, len(stroke)):
-                x1, y1 = stroke[i-1]
-                x2, y2 = stroke[i]
+            if len(stroke) > 1:
+                # Draw the entire stroke as a smooth line
+                points = []
+                for x, y in stroke:
+                    points.extend([x, y])
+                
                 self.canvas.create_line(
-                    x1, y1, x2, y2,
+                    *points,
                     fill='white',
-                    width=3,
+                    width=6,
                     capstyle=tk.ROUND,
                     joinstyle=tk.ROUND,
+                    smooth=tk.TRUE,
+                    splinesteps=36,
                     tags='stroke'
                 )
     
