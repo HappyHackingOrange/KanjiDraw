@@ -23,14 +23,18 @@ class KanjiDrawApp:
         self.canvas_frame = tk.Frame(self.main_frame, bg='black')
         self.canvas_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Create canvas with white square
+        # Create canvas with black background
         self.canvas_size = 400  # Initial size
         self.canvas = tk.Canvas(
             self.canvas_frame,
-            bg='white',
+            bg='black',
             width=self.canvas_size,
             height=self.canvas_size,
-            highlightthickness=0
+            highlightthickness=2,
+            highlightbackground='white',
+            highlightcolor='white',
+            bd=2,
+            relief=tk.SOLID
         )
         self.canvas.pack(expand=True)
         
@@ -85,18 +89,18 @@ class KanjiDrawApp:
         # Horizontal line
         self.canvas.create_line(
             0, center, self.canvas_size, center,
-            fill='#CCCCCC',
-            width=1,
-            dash=(5, 5),
+            fill='white',
+            width=2,
+            dash=(10, 10),
             tags='guide'
         )
         
         # Vertical line
         self.canvas.create_line(
             center, 0, center, self.canvas_size,
-            fill='#CCCCCC',
-            width=1,
-            dash=(5, 5),
+            fill='white',
+            width=2,
+            dash=(10, 10),
             tags='guide'
         )
     
@@ -116,7 +120,7 @@ class KanjiDrawApp:
                 prev_x, prev_y = self.current_stroke[-2]
                 self.canvas.create_line(
                     prev_x, prev_y, x, y,
-                    fill='black',
+                    fill='white',
                     width=3,
                     capstyle=tk.ROUND,
                     joinstyle=tk.ROUND,
@@ -154,7 +158,7 @@ class KanjiDrawApp:
                 x2, y2 = stroke[i]
                 self.canvas.create_line(
                     x1, y1, x2, y2,
-                    fill='black',
+                    fill='white',
                     width=3,
                     capstyle=tk.ROUND,
                     joinstyle=tk.ROUND,
