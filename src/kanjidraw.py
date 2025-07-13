@@ -162,8 +162,12 @@ class KanjiDrawApp:
             self.canvas.delete('temp_stroke')
             self.strokes.append(self.current_stroke)
             
-            # Draw the final stroke as permanent (no need to redraw everything)
-            self.draw_stroke_path(self.current_stroke, 'stroke')
+            # If antialiasing is enabled, redraw everything to prevent borders between strokes
+            if self.enable_antialiasing:
+                self.redraw_canvas()
+            else:
+                # Draw the final stroke as permanent (no need to redraw everything)
+                self.draw_stroke_path(self.current_stroke, 'stroke')
             
             self.current_stroke = []
         self.is_drawing = False
@@ -185,10 +189,49 @@ class KanjiDrawApp:
         # Clear all strokes but keep guide lines
         self.canvas.delete('stroke')
         
-        # Redraw all strokes as complete paths
-        for stroke in self.strokes:
-            if len(stroke) >= 2:
-                self.draw_stroke_path(stroke, 'stroke')
+        if self.enable_antialiasing:
+            # Draw all strokes in layers to avoid borders between strokes
+            
+            # First pass: Draw all outer gray layers
+            for stroke in self.strokes:
+                if len(stroke) >= 2:
+                    self.draw_stroke_layer(stroke, self.stroke_thickness + 2, '#888888', 'stroke')
+            
+            # Second pass: Draw all inner gray layers
+            for stroke in self.strokes:
+                if len(stroke) >= 2:
+                    self.draw_stroke_layer(stroke, self.stroke_thickness + 1, '#CCCCCC', 'stroke')
+            
+            # Third pass: Draw all white cores
+            for stroke in self.strokes:
+                if len(stroke) >= 2:
+                    self.draw_stroke_layer(stroke, self.stroke_thickness, 'white', 'stroke')
+        else:
+            # Standard drawing without antialiasing
+            for stroke in self.strokes:
+                if len(stroke) >= 2:
+                    self.draw_stroke_layer(stroke, self.stroke_thickness, 'white', 'stroke')
+    
+    def draw_stroke_layer(self, stroke_points, width, color, tag):
+        """Draw a single layer of a stroke with specified width and color"""
+        if len(stroke_points) < 2:
+            return
+            
+        # Convert points to flat list for tkinter
+        points = []
+        for x, y in stroke_points:
+            points.extend([x, y])
+        
+        self.canvas.create_line(
+            *points,
+            fill=color,
+            width=width,
+            capstyle=tk.ROUND,
+            joinstyle=tk.ROUND,
+            smooth=tk.TRUE,
+            splinesteps=24,
+            tags=tag
+        )
     
     def draw_stroke_path(self, stroke_points, tag):
         """Draw an entire stroke as a smooth path with antialiasing"""
