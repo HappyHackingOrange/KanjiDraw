@@ -1,0 +1,6 @@
+# KanjiDraw uses only Python standard library
+# No pip dependencies required
+
+# System dependency:
+# Ubuntu: sudo apt-get install python3.12-tk
+# (or python3-tk for your system's Python version)
