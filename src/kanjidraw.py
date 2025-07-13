@@ -15,7 +15,7 @@ class KanjiDrawApp:
         self.strokes = []
         self.current_stroke = []
         self.is_drawing = False
-        self.stroke_thickness = 6  # Default thickness
+        self.stroke_thickness = 15  # Default thickness
         
         # Set up the main frame
         self.main_frame = tk.Frame(root, bg='black')
@@ -399,7 +399,7 @@ class KanjiDrawApp:
         self.thick_scale = tk.Scale(
             control_frame,
             from_=1,
-            to=20,
+            to=30,
             orient=tk.HORIZONTAL,
             command=self.update_thickness,
             bg='#555555',
