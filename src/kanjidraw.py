@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import tkinter as tk
 from tkinter import ttk
-import math
 
 
 class KanjiDrawApp:
@@ -47,7 +46,7 @@ class KanjiDrawApp:
         )
         self.canvas.pack(side=tk.TOP)
         
-        # Draw guide lines
+        # Draw guidelines
         self.draw_guide_lines()
         
         # Bind mouse events for drawing
@@ -200,27 +199,38 @@ class KanjiDrawApp:
     
     def redraw_canvas(self):
         """Redraw the entire canvas"""
-        # Clear all strokes but keep guide lines
+        # Clear all strokes but keep guidelines
         self.canvas.delete('stroke')
         
-        # Redraw guide lines to ensure they're always centered
+        # Redraw guidelines to ensure they're always centered
         self.canvas.delete('guide')
         self.draw_guide_lines()
         
         if self.enable_antialiasing:
             # Draw all strokes in layers to avoid borders between strokes
+            # Use more layers for smoother antialiasing
             
-            # First pass: Draw all outer gray layers
+            # First pass: Outermost edge (very light gray)
             for stroke in self.strokes:
                 if len(stroke) >= 2:
-                    self.draw_stroke_layer(stroke, self.stroke_thickness + 2, '#888888', 'stroke')
+                    self.draw_stroke_layer(stroke, self.stroke_thickness + 4, '#AAAAAA', 'stroke')
             
-            # Second pass: Draw all inner gray layers
+            # Second pass: Outer edge (light gray)
             for stroke in self.strokes:
                 if len(stroke) >= 2:
-                    self.draw_stroke_layer(stroke, self.stroke_thickness + 1, '#CCCCCC', 'stroke')
+                    self.draw_stroke_layer(stroke, self.stroke_thickness + 3, '#BBBBBB', 'stroke')
             
-            # Third pass: Draw all white cores
+            # Third pass: Mid-outer edge
+            for stroke in self.strokes:
+                if len(stroke) >= 2:
+                    self.draw_stroke_layer(stroke, self.stroke_thickness + 2, '#CCCCCC', 'stroke')
+            
+            # Fourth pass: Inner edge
+            for stroke in self.strokes:
+                if len(stroke) >= 2:
+                    self.draw_stroke_layer(stroke, self.stroke_thickness + 1, '#DDDDDD', 'stroke')
+            
+            # Fifth pass: White core
             for stroke in self.strokes:
                 if len(stroke) >= 2:
                     self.draw_stroke_layer(stroke, self.stroke_thickness, 'white', 'stroke')
@@ -247,7 +257,7 @@ class KanjiDrawApp:
             capstyle=tk.ROUND,
             joinstyle=tk.ROUND,
             smooth=tk.TRUE,
-            splinesteps=24,
+            splinesteps=48,
             tags=tag
         )
     
@@ -262,7 +272,7 @@ class KanjiDrawApp:
             points.extend([x, y])
         
         # Use fewer spline steps for temp strokes to improve performance
-        steps = 12 if tag == 'temp_stroke' else 24
+        steps = 24 if tag == 'temp_stroke' else 48
         
         if self.enable_antialiasing:
             # Draw layers from largest to smallest for proper antialiasing
