@@ -54,6 +54,7 @@ When running with `--debug` flag:
 ## Screenshots
 
 ![KanjiDraw Interface](screenshots/main.png)
+
 *Simple, distraction-free drawing interface*
 
 ## Technical Details
