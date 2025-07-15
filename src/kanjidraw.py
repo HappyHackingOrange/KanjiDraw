@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk
 
 
 class KanjiDrawApp:
@@ -24,18 +23,10 @@ class KanjiDrawApp:
         self.canvas_frame = tk.Frame(self.main_frame, bg='black')
         self.canvas_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Create a container to center buttons and canvas together
-        self.drawing_container = tk.Frame(self.canvas_frame, bg='black')
-        self.drawing_container.pack(expand=True)
-        
-        # Create button frame at the top of the container
-        self.button_frame = tk.Frame(self.drawing_container, bg='black')
-        self.button_frame.pack(side=tk.TOP, pady=(0, 5))
-        
         # Create canvas with black background
         self.canvas_size = 800  # Fixed size for good balance
         self.canvas = tk.Canvas(
-            self.drawing_container,
+            self.canvas_frame,
             bg='black',
             width=self.canvas_size,
             height=self.canvas_size,
@@ -44,7 +35,7 @@ class KanjiDrawApp:
             highlightcolor='white',
             bd=0
         )
-        self.canvas.pack(side=tk.TOP)
+        self.canvas.pack(expand=True)
         
         # Draw guidelines
         self.draw_guide_lines()
@@ -54,39 +45,15 @@ class KanjiDrawApp:
         self.canvas.bind("<B1-Motion>", self.draw)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
         
+        # Bind keyboard shortcuts
+        self.root.bind("q", lambda e: self.undo_stroke())
+        self.root.bind("Q", lambda e: self.undo_stroke())
+        self.root.bind("e", lambda e: self.clear_all())
+        self.root.bind("E", lambda e: self.clear_all())
+        
         # Enable antialiasing by adding multiple stroke layers
         self.enable_antialiasing = True
         self.drawing_performance_mode = True  # Use simpler rendering while drawing
-        
-        
-        # Style for buttons
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure('KanjiButton.TButton',
-                       background='#333333',
-                       foreground='white',
-                       bordercolor='#555555',
-                       focuscolor='none',
-                       borderwidth=1)
-        style.map('KanjiButton.TButton',
-                 background=[('active', '#555555')])
-        
-        # Create buttons
-        self.undo_button = ttk.Button(
-            self.button_frame,
-            text="Undo Stroke",
-            command=self.undo_stroke,
-            style='KanjiButton.TButton'
-        )
-        self.undo_button.pack(side=tk.LEFT, padx=5)
-        
-        self.clear_button = ttk.Button(
-            self.button_frame,
-            text="Clear All",
-            command=self.clear_all,
-            style='KanjiButton.TButton'
-        )
-        self.clear_button.pack(side=tk.LEFT, padx=5)
         
         # Initialize debug controls placeholder
         self.control_frame = None
