@@ -17,11 +17,11 @@ class KanjiDrawApp:
         
         # Set up the main frame
         self.main_frame = tk.Frame(root, bg='black')
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        self.main_frame.pack(fill='both', expand=True)
         
         # Create canvas frame
         self.canvas_frame = tk.Frame(self.main_frame, bg='black')
-        self.canvas_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self.canvas_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
         # Create canvas with black background
         self.canvas_size = 800  # Fixed size for good balance
@@ -57,6 +57,11 @@ class KanjiDrawApp:
         
         # Initialize debug controls placeholder
         self.control_frame = None
+        self.thick_scale = None
+        self.aa_var = None
+        self.aa_checkbox = None
+        self.perf_var = None
+        self.perf_checkbox = None
         
         # Bind window resize event
         self.canvas_frame.bind("<Configure>", self.on_resize)
@@ -125,9 +130,9 @@ class KanjiDrawApp:
                         prev_x, prev_y, x, y,
                         fill='white',
                         width=self.stroke_thickness,
-                        capstyle=tk.ROUND,
-                        joinstyle=tk.ROUND,
-                        smooth=tk.TRUE,
+                        capstyle='round',
+                        joinstyle='round',
+                        smooth=True,
                         tags='temp_stroke'
                     )
                 else:
@@ -135,7 +140,7 @@ class KanjiDrawApp:
                     self.canvas.delete('temp_stroke')
                     self.draw_stroke_path(self.current_stroke, 'temp_stroke')
     
-    def stop_drawing(self, event):
+    def stop_drawing(self, _event):
         """Finish the current stroke"""
         if self.is_drawing and self.current_stroke:
             # Convert temporary stroke to permanent stroke
@@ -218,12 +223,12 @@ class KanjiDrawApp:
             points.extend([x, y])
         
         self.canvas.create_line(
-            *points,
+            points,
             fill=color,
             width=width,
-            capstyle=tk.ROUND,
-            joinstyle=tk.ROUND,
-            smooth=tk.TRUE,
+            capstyle='round',
+            joinstyle='round',
+            smooth=True,
             splinesteps=48,
             tags=tag
         )
@@ -245,48 +250,48 @@ class KanjiDrawApp:
             # Draw layers from largest to smallest for proper antialiasing
             # Outer edge (light gray)
             self.canvas.create_line(
-                *points,
+                points,
                 fill='#888888',
                 width=self.stroke_thickness + 2,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 splinesteps=steps,
                 tags=tag
             )
             
             # Inner edge (very light gray)
             self.canvas.create_line(
-                *points,
+                points,
                 fill='#CCCCCC',
                 width=self.stroke_thickness + 1,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 splinesteps=steps,
                 tags=tag
             )
             
             # Core layer (white)
             self.canvas.create_line(
-                *points,
+                points,
                 fill='white',
                 width=self.stroke_thickness,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 splinesteps=steps,
                 tags=tag
             )
         else:
             # Standard drawing without antialiasing
             self.canvas.create_line(
-                *points,
+                points,
                 fill='white',
                 width=self.stroke_thickness,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 splinesteps=steps,
                 tags=tag
             )
@@ -302,9 +307,9 @@ class KanjiDrawApp:
                 x1, y1, x2, y2,
                 fill='#888888',
                 width=self.stroke_thickness + 2,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 tags='stroke'
             )
             
@@ -313,9 +318,9 @@ class KanjiDrawApp:
                 x1, y1, x2, y2,
                 fill='#CCCCCC',
                 width=self.stroke_thickness + 1,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 tags='stroke'
             )
             
@@ -324,9 +329,9 @@ class KanjiDrawApp:
                 x1, y1, x2, y2,
                 fill='white',
                 width=self.stroke_thickness,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 tags='stroke'
             )
         else:
@@ -335,9 +340,9 @@ class KanjiDrawApp:
                 x1, y1, x2, y2,
                 fill='white',
                 width=self.stroke_thickness,
-                capstyle=tk.ROUND,
-                joinstyle=tk.ROUND,
-                smooth=tk.TRUE,
+                capstyle='round',
+                joinstyle='round',
+                smooth=True,
                 tags='stroke'
             )
     
@@ -355,7 +360,7 @@ class KanjiDrawApp:
         """Create debug controls at the bottom"""
         # Create control frame directly in root window
         self.control_frame = tk.Frame(self.root, bg='#333333', height=80)
-        self.control_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        self.control_frame.pack(side='bottom', fill='x', padx=10, pady=5)
         self.control_frame.pack_propagate(False)  # Don't shrink to content
         
         # Debug label
@@ -366,18 +371,18 @@ class KanjiDrawApp:
             bg='#333333',
             font=('Arial', 9, 'bold')
         )
-        debug_label.pack(side=tk.TOP, pady=2)
+        debug_label.pack(side='top', pady=2)
         
         # Create a sub-frame for controls
         control_frame = tk.Frame(self.control_frame, bg='#333333')
-        control_frame.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
+        control_frame.pack(side='top', expand=True, fill='both')
         
         # Thickness slider
         self.thick_scale = tk.Scale(
             control_frame,
             from_=1,
             to=30,
-            orient=tk.HORIZONTAL,
+            orient='horizontal',
             command=self.update_thickness,
             bg='#555555',
             fg='white',
@@ -388,7 +393,7 @@ class KanjiDrawApp:
             font=('Arial', 8)
         )
         self.thick_scale.set(self.stroke_thickness)
-        self.thick_scale.pack(side=tk.LEFT, padx=20, pady=5)
+        self.thick_scale.pack(side='left', padx=20, pady=5)
         
         # Antialiasing toggle
         self.aa_var = tk.BooleanVar(value=self.enable_antialiasing)
@@ -404,7 +409,7 @@ class KanjiDrawApp:
             activeforeground='white',
             font=('Arial', 8)
         )
-        self.aa_checkbox.pack(side=tk.LEFT, padx=10, pady=5)
+        self.aa_checkbox.pack(side='left', padx=10, pady=5)
         
         # Performance mode toggle
         self.perf_var = tk.BooleanVar(value=self.drawing_performance_mode)
@@ -420,7 +425,7 @@ class KanjiDrawApp:
             activeforeground='white',
             font=('Arial', 8)
         )
-        self.perf_checkbox.pack(side=tk.LEFT, padx=10, pady=5)
+        self.perf_checkbox.pack(side='left', padx=10, pady=5)
         
         # Force immediate visibility
         self.control_frame.update_idletasks()
