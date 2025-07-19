@@ -25,6 +25,12 @@ class KanjiDrawApp:
         self.start_time = None
         self.timer_running = False
         
+        # Countdown timer variables
+        self.countdown_visible = False
+        self.countdown_start_time = None
+        self.countdown_running = False
+        self.countdown_duration = 5 * 60  # 5 minutes in seconds
+        
         # Create canvas frame - always centered and fills window
         self.canvas_frame = tk.Frame(self.main_frame, bg='black')
         self.canvas_frame.pack(fill='both', expand=True, padx=20, pady=20)
@@ -39,6 +45,17 @@ class KanjiDrawApp:
             bg='black'
         )
         self.timer_label.pack(expand=True, fill='both')
+        
+        # Create countdown timer frame as overlay (initially hidden)
+        self.countdown_frame = tk.Frame(self.main_frame, bg='black')
+        self.countdown_label = tk.Label(
+            self.countdown_frame,
+            text="5:00",
+            font=('Arial', 48, 'bold'),
+            fg='white',
+            bg='black'
+        )
+        self.countdown_label.pack(expand=True, fill='both')
         
         # Create canvas with black background
         self.canvas_size = 800  # Fixed size for good balance
@@ -69,6 +86,8 @@ class KanjiDrawApp:
         self.root.bind("E", lambda e: self.clear_all())
         self.root.bind("w", lambda e: self.toggle_timer())
         self.root.bind("W", lambda e: self.toggle_timer())
+        self.root.bind("s", lambda e: self.toggle_countdown())
+        self.root.bind("S", lambda e: self.toggle_countdown())
         
         # Enable antialiasing by adding multiple stroke layers
         self.enable_antialiasing = True
@@ -187,10 +206,27 @@ class KanjiDrawApp:
         self.strokes = []
         self.current_stroke = []
         self.redraw_canvas()
-        # Reset timer
-        self.start_time = None
-        self.timer_running = False
-        self.timer_label.config(text="0:00")
+        # Reset timer - restart if visible
+        if self.timer_visible:
+            self.start_time = time.time()
+            self.timer_running = True
+            self.timer_label.config(text="0:00")
+            self.update_timer()
+        else:
+            self.start_time = None
+            self.timer_running = False
+            self.timer_label.config(text="0:00")
+        
+        # Reset countdown timer - restart if visible
+        if self.countdown_visible:
+            self.countdown_start_time = time.time()
+            self.countdown_running = True
+            self.countdown_label.config(text="5:00")
+            self.update_countdown()
+        else:
+            self.countdown_start_time = None
+            self.countdown_running = False
+            self.countdown_label.config(text="5:00")
     
     def redraw_canvas(self):
         """Redraw the entire canvas"""
@@ -495,9 +531,11 @@ class KanjiDrawApp:
             self.draw_guide_lines()
             self.redraw_canvas()
             
-            # Update timer position if visible
+            # Update timer positions if visible
             if self.timer_visible:
                 self.update_timer_position()
+            if self.countdown_visible:
+                self.update_countdown_position()
     
     def update_timer_position(self):
         """Update timer position and size based on current layout"""
@@ -532,11 +570,11 @@ class KanjiDrawApp:
             # Position timer in available space
             self.update_timer_position()
             
-            # Start timer if not already running
-            if not self.timer_running:
-                self.start_time = time.time()
-                self.timer_running = True
-                self.update_timer()
+            # Reset and start timer
+            self.start_time = time.time()
+            self.timer_running = True
+            self.timer_label.config(text="0:00")
+            self.update_timer()
         else:
             # Hide timer frame
             self.timer_frame.place_forget()
@@ -552,6 +590,71 @@ class KanjiDrawApp:
             
             # Schedule next update
             self.root.after(100, self.update_timer)
+    
+    def update_countdown_position(self):
+        """Update countdown timer position and size based on current layout"""
+        if not self.countdown_visible:
+            return
+            
+        # Update geometry to get current layout
+        self.root.update_idletasks()
+        
+        # Get canvas position and size
+        canvas_frame_y = self.canvas_frame.winfo_y()
+        canvas_y = canvas_frame_y + self.canvas.winfo_y()
+        canvas_height = self.canvas.winfo_height()
+        
+        # Calculate position below canvas
+        countdown_y = canvas_y + canvas_height + 20
+        window_height = self.root.winfo_height()
+        countdown_height = max(10, window_height - countdown_y - 20)  # Ensure minimum height
+        
+        # Calculate font size based on available height
+        font_size = max(12, int(countdown_height * 0.6))
+        
+        # Update font size
+        self.countdown_label.config(font=('Arial', font_size, 'bold'))
+        
+        # Position countdown timer to fill the bottom space
+        self.countdown_frame.place(x=0, y=countdown_y, relwidth=1.0, height=countdown_height)
+    
+    def toggle_countdown(self):
+        """Toggle countdown timer visibility and start/stop countdown"""
+        self.countdown_visible = not self.countdown_visible
+        
+        if self.countdown_visible:
+            # Position countdown timer in available space
+            self.update_countdown_position()
+            
+            # Reset and start countdown
+            self.countdown_start_time = time.time()
+            self.countdown_running = True
+            self.countdown_label.config(text="5:00")
+            self.update_countdown()
+        else:
+            # Hide countdown timer frame
+            self.countdown_frame.place_forget()
+    
+    def update_countdown(self):
+        """Update countdown timer display"""
+        if self.countdown_running and self.countdown_visible:
+            if self.countdown_start_time:
+                elapsed = int(time.time() - self.countdown_start_time)
+                remaining = max(0, self.countdown_duration - elapsed)
+                
+                minutes = remaining // 60
+                seconds = remaining % 60
+                
+                if remaining > 0:
+                    self.countdown_label.config(text=f"{minutes}:{seconds:02d}")
+                else:
+                    # Time's up!
+                    self.countdown_label.config(text="0:00", fg='red')
+                    self.countdown_running = False
+                    return
+            
+            # Schedule next update
+            self.root.after(100, self.update_countdown)
 
 
 def main():
