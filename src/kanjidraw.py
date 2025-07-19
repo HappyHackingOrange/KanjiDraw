@@ -25,20 +25,20 @@ class KanjiDrawApp:
         self.start_time = None
         self.timer_running = False
         
-        # Create timer frame (initially hidden)
-        self.timer_frame = tk.Frame(self.main_frame, bg='black', height=60)
+        # Create canvas frame - always centered and fills window
+        self.canvas_frame = tk.Frame(self.main_frame, bg='black')
+        self.canvas_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Create timer frame as overlay (initially hidden)
+        self.timer_frame = tk.Frame(self.main_frame, bg='black')
         self.timer_label = tk.Label(
             self.timer_frame,
             text="0:00",
-            font=('Arial', 36, 'bold'),
+            font=('Arial', 48, 'bold'),
             fg='white',
             bg='black'
         )
-        self.timer_label.pack(expand=True)
-        
-        # Create canvas frame
-        self.canvas_frame = tk.Frame(self.main_frame, bg='black')
-        self.canvas_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
+        self.timer_label.pack(expand=True, fill='both')
         
         # Create canvas with black background
         self.canvas_size = 800  # Fixed size for good balance
@@ -494,15 +494,43 @@ class KanjiDrawApp:
             self.canvas.delete('all')
             self.draw_guide_lines()
             self.redraw_canvas()
+            
+            # Update timer position if visible
+            if self.timer_visible:
+                self.update_timer_position()
+    
+    def update_timer_position(self):
+        """Update timer position and size based on current layout"""
+        if not self.timer_visible:
+            return
+            
+        # Update geometry to get current layout
+        self.root.update_idletasks()
+        
+        # Get canvas position relative to main frame
+        canvas_frame_y = self.canvas_frame.winfo_y()
+        canvas_y = canvas_frame_y + self.canvas.winfo_y()
+        
+        # Timer should fill from top of window to top of canvas
+        timer_height = max(10, canvas_y - 20)  # Ensure minimum height
+        
+        # Calculate font size based on available height
+        # Use about 60% of available height for font size
+        font_size = max(12, int(timer_height * 0.6))
+        
+        # Update font size
+        self.timer_label.config(font=('Arial', font_size, 'bold'))
+        
+        # Position timer to fill the top space
+        self.timer_frame.place(x=0, y=0, relwidth=1.0, height=timer_height)
     
     def toggle_timer(self):
         """Toggle timer visibility and start/stop timer"""
         self.timer_visible = not self.timer_visible
         
         if self.timer_visible:
-            # Show timer frame
-            self.timer_frame.pack(side='top', fill='x', padx=20, pady=(20, 0))
-            self.canvas_frame.pack_configure(pady=(10, 20))
+            # Position timer in available space
+            self.update_timer_position()
             
             # Start timer if not already running
             if not self.timer_running:
@@ -511,8 +539,7 @@ class KanjiDrawApp:
                 self.update_timer()
         else:
             # Hide timer frame
-            self.timer_frame.pack_forget()
-            self.canvas_frame.pack_configure(pady=(0, 20))
+            self.timer_frame.place_forget()
     
     def update_timer(self):
         """Update timer display"""

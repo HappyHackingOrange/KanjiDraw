@@ -5,7 +5,7 @@ A simple, elegant kanji drawing practice application for Ubuntu. Draw Japanese c
 ## Features
 
 - Smooth, antialiased stroke rendering
-- Practice timer with keyboard toggle
+- Practice timer with dynamic sizing and keyboard toggle
 - Keyboard shortcuts (Q: undo, E: clear, W: toggle timer)
 - Centered guide lines for proper character alignment
 - Minimalist interface focused on practice
@@ -43,7 +43,7 @@ python3 src/kanjidraw.py --debug
 - **Draw**: Click and drag with mouse
 - **Q**: Undo last stroke  
 - **E**: Clear all strokes (also resets timer)
-- **W**: Toggle practice timer display
+- **W**: Toggle practice timer display (auto-scales to fit available space)
 - **Window resize**: Canvas scales proportionally
 
 ## Debug Mode Features
