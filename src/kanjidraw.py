@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import tkinter as tk
+import time
 
 
 class KanjiDrawApp:
@@ -19,9 +20,25 @@ class KanjiDrawApp:
         self.main_frame = tk.Frame(root, bg='black')
         self.main_frame.pack(fill='both', expand=True)
         
+        # Timer variables
+        self.timer_visible = False
+        self.start_time = None
+        self.timer_running = False
+        
+        # Create timer frame (initially hidden)
+        self.timer_frame = tk.Frame(self.main_frame, bg='black', height=60)
+        self.timer_label = tk.Label(
+            self.timer_frame,
+            text="0:00",
+            font=('Arial', 36, 'bold'),
+            fg='white',
+            bg='black'
+        )
+        self.timer_label.pack(expand=True)
+        
         # Create canvas frame
         self.canvas_frame = tk.Frame(self.main_frame, bg='black')
-        self.canvas_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        self.canvas_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
         
         # Create canvas with black background
         self.canvas_size = 800  # Fixed size for good balance
@@ -50,6 +67,8 @@ class KanjiDrawApp:
         self.root.bind("Q", lambda e: self.undo_stroke())
         self.root.bind("e", lambda e: self.clear_all())
         self.root.bind("E", lambda e: self.clear_all())
+        self.root.bind("w", lambda e: self.toggle_timer())
+        self.root.bind("W", lambda e: self.toggle_timer())
         
         # Enable antialiasing by adding multiple stroke layers
         self.enable_antialiasing = True
@@ -164,10 +183,14 @@ class KanjiDrawApp:
             self.redraw_canvas()
     
     def clear_all(self):
-        """Clear all strokes"""
+        """Clear all strokes and reset timer"""
         self.strokes = []
         self.current_stroke = []
         self.redraw_canvas()
+        # Reset timer
+        self.start_time = None
+        self.timer_running = False
+        self.timer_label.config(text="0:00")
     
     def redraw_canvas(self):
         """Redraw the entire canvas"""
@@ -471,6 +494,37 @@ class KanjiDrawApp:
             self.canvas.delete('all')
             self.draw_guide_lines()
             self.redraw_canvas()
+    
+    def toggle_timer(self):
+        """Toggle timer visibility and start/stop timer"""
+        self.timer_visible = not self.timer_visible
+        
+        if self.timer_visible:
+            # Show timer frame
+            self.timer_frame.pack(side='top', fill='x', padx=20, pady=(20, 0))
+            self.canvas_frame.pack_configure(pady=(10, 20))
+            
+            # Start timer if not already running
+            if not self.timer_running:
+                self.start_time = time.time()
+                self.timer_running = True
+                self.update_timer()
+        else:
+            # Hide timer frame
+            self.timer_frame.pack_forget()
+            self.canvas_frame.pack_configure(pady=(0, 20))
+    
+    def update_timer(self):
+        """Update timer display"""
+        if self.timer_running and self.timer_visible:
+            if self.start_time:
+                elapsed = int(time.time() - self.start_time)
+                minutes = elapsed // 60
+                seconds = elapsed % 60
+                self.timer_label.config(text=f"{minutes}:{seconds:02d}")
+            
+            # Schedule next update
+            self.root.after(100, self.update_timer)
 
 
 def main():
